@@ -1,0 +1,173 @@
+
+/* Styling for the dropdown button */
+.dropbtn {
+    background-color: #262d3d;
+    /* Dark background color */
+    color: #fff;
+    /* White text color */
+    padding: 10px;
+    font-size: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid #87CEFA2b;
+    /* Light blue border on top */
+    border-bottom: 2px solid transparent;
+    border-radius: 8px;
+    /* Rounded corners */
+    width: 100%;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    outline: none;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+    /* Shadow effect */
+    cursor: pointer;
+}
+
+.dropbtn:after {
+    content: '▼';
+    /* Downward arrow */
+    font-size: 12px;
+    margin-left: 10px;
+    color: #fff;
+    /* White arrow */
+}
+
+/* Remove the top border highlight when dropdown is open */
+.dropdown.open .dropbtn {
+    /* border-top: none; */
+}
+
+/* Styling for the dropdown container */
+.dropdown {
+    position: relative;
+    display: inline-block;
+    width: 220px;
+}
+
+/* Styling for the dropdown content */
+.dropdown-content {
+    display: none;
+    /* Initially hidden */
+    position: absolute;
+    background-color: #1f1f1f;
+    /* Same dark background */
+    color: #fff;
+    min-width: 100%;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+    /* Same shadow effect */
+    border-radius: 8px;
+    z-index: 1;
+    /* border-top: 2px solid #87CEFA; */
+    /* Highlight border at the top */
+}
+
+/* Ensure dropdown content displays when the 'open' class is added */
+.dropdown.open .dropdown-content {
+    display: block;
+
+}
+
+
+/* Styling for the dropdown item */
+.dropdown-item {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 20px;
+    padding-right: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    border-bottom: 1px solid #3a3a3a;
+    /* Slight bottom border for each item */
+}
+
+.dropdown-item span {
+    margin-left: 0px;
+    /* Ensure no margin on the span */
+    padding: 0px;
+    /* Remove any default padding */
+}
+
+
+.dropdown-item:hover {
+    background-color: #87CEFA;
+    /* Light blue background on hover */
+    color: #000;
+    /* Change text color on hover */
+}
+
+/* Highlight the selected item */
+.selected-item {
+    background-color: #87CEFA;
+    /* Light blue background to highlight */
+    color: #000;
+    /* Change text color for selected item */
+    font-weight: bold;
+    /* Make the text bold */
+}
+
+/* Hide the Edit and Delete buttons by default */
+.dropdown-item button {
+    display: none;
+}
+
+/* Show the Edit and Delete buttons only when hovering over the dropdown item */
+.dropdown-item:hover button {
+    display: inline-block;
+}
+
+/* Div for holding Create and Join buttons */
+.dropdown-footer {
+    display: flex;
+    justify-content: space-around;
+    /* Evenly space the buttons */
+    padding: 10px;
+    border-top: 1px solid #3a3a3a;
+}
+
+.dropdown-footer button {
+    background-color: #87CEFA;
+    color: #000;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+    width: 80px;
+    /* Ensure consistent width */
+}
+
+.dropdown-footer button:hover {
+    background-color: #5db3e3;
+}
+
+/* Styling for displaying selected information */
+#selectedInfo {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #f4f4f4;
+    border: 1px solid #ddd;
+    width: fit-content;
+}
+
+.group_avatar {
+    position: relative;
+    background-color: #ff0000;
+    /* Set a background color for visibility */
+    height: 30px;
+    /* Set a height for the avatar */
+    width: 30px;
+    /* Set a width for the avatar */
+    border-radius: 50%;
+    /* Make it circular */
+    margin-right: 10px;
+    /* Add some space between the avatar and the text */
+    display: inline-block;
+    /* Ensure it stays inline with the text */
+    top: 0;
+    /* Align it vertically with the text */
+}

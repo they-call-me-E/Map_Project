@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Full-Screen Map with Geofence and Auto GPS Update</title>
+
+  <!-- Mapbox GL JS and CSS -->
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet" />
+
+  <style>
+    /* Ensure the body and HTML take up the full viewport */
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Fullscreen container for the map and controls */
+    .container {
+      display: flex;
+      flex-direction: row;
+      height: 100%;
+      width: 100%;
+    }
+
+    .left {
+      width: 30%;
+      background-color: lightblue;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    .right {
+      width: 70%;
+      position: relative;
+      height: 100%;
+    }
+
+    /* Fullscreen map */
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 100%;
+      width: 100%;
+    }
+
+    /* Input fields styling */
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    input {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+
+    button {
+      padding: 10px;
+      width: 100%;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    /* Styling for slider and radius display */
+    .slider-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .slider-container input[type=range] {
+      width: 70%;
+    }
+
+    .radius-display {
+      font-size: 16px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="left">
+      <h3>Geofence Settings</h3>
+      <form id="infoForm">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" placeholder="Enter name">
+
+        <label for="address">Address:</label>
+        <input type="text" id="address" name="address" placeholder="Enter full address (e.g., 287 Castleton Cir, Boiling Springs, SC, USA)">
+
+        <label for="lat">Latitude:</label>
+        <input type="text" id="lat" name="lat" placeholder="Enter latitude" readonly>
+
+        <label for="lng">Longitude:</label>
+        <input type="text" id="lng" name="lng" placeholder="Enter longitude" readonly>
+
+        <label>Geofence Radius</label>
+        <div class="slider-container">
+          <input type="range" id="radiusSlider" min="100" max="1000" value="250">
+          <span class="radius-display" id="radiusDisplay">250 ft</span>
+        </div>
+
+        <!-- New Button to convert address to GPS coordinates and move the map -->
+        <button type="button" id="addressToCoordinates">Move Map to Address</button>
+      </form>
+    </div>
+    <div class="right">
+      <!-- Map will render here -->
+      <div id="map"></div>
+    </div>
+  </div>
+
+  <script>
+    // Use the new Mapbox access token you supplied
+    mapboxgl.accessToken = 'pk.eyJ1IjoidGhleWNhbGxtZWUiLCJhIjoiY2xhZXF6anQxMHgzazNxczNzd2I5em10dyJ9.fa-pBQ_2cMg9H2fD-FBCDg';
+
+    // Initialize the map with dark style
+    var map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/dark-v10', // Dark style applied here
+      center: [-81, 34], // Default map center [lng, lat]
+      zoom: 9
+    });
+
+    // Add the default Mapbox marker at the center of the map
+    var marker = new mapboxgl.Marker({ draggable: false })
+      .setLngLat(map.getCenter())
+      .addTo(map);
+
+    // Initial geofence radius in feet
+    var radiusInFeet = 250;
+
+    // Create a source and layer for the geofence circle
+    map.on('load', function () {
+      map.addSource('geofence', {
+        'type': 'geojson',
+        'data': createGeoJSONCircle(map.getCenter(), radiusInFeet)
+      });
+
+      map.addLayer({
+        'id': 'geofence-layer',
+        'type': 'fill',
+        'source': 'geofence',
+        'layout': {},
+        'paint': {
+          'fill-color': '#007bff',
+          'fill-opacity': 0.3
+        }
+      });
+    });
+
+    // Function to create a GeoJSON circle
+    function createGeoJSONCircle(center, radiusInFeet) {
+      var radiusInMeters = radiusInFeet * 0.3048;
+      var points = 64;
+      var coords = {
+        latitude: center.lat,
+        longitude: center.lng
+      };
+      var km = radiusInMeters / 1000;
+
+      var ret = [];
+      var distanceX = km / (111.32 * Math.cos(coords.latitude * Math.PI / 180));
+      var distanceY = km / 110.574;
+
+      for (var i = 0; i < points; i++) {
+        var theta = (i / points) * (2 * Math.PI);
+        var x = distanceX * Math.cos(theta);
+        var y = distanceY * Math.sin(theta);
+
+        ret.push([coords.longitude + x, coords.latitude + y]);
+      }
+      ret.push(ret[0]);
+
+      return {
+        'type': 'Feature',
+        'geometry': {
+          'type': 'Polygon',
+          'coordinates': [ret]
+        }
+      };
+    }
+
+    // Update the geofence when the map moves
+    map.on('move', function () {
+      marker.setLngLat(map.getCenter());
+      var center = map.getCenter();
+      map.getSource('geofence').setData(createGeoJSONCircle(center, radiusInFeet));
+    });
+
+    // Event listener for the radius slider
+    var radiusSlider = document.getElementById('radiusSlider');
+    var radiusDisplay = document.getElementById('radiusDisplay');
+
+    radiusSlider.addEventListener('input', function () {
+      radiusInFeet = parseInt(this.value);
+      radiusDisplay.innerHTML = radiusInFeet + ' ft';
+      var center = map.getCenter();
+      map.getSource('geofence').setData(createGeoJSONCircle(center, radiusInFeet));
+    });
+
+    // Automatically update coordinates and address after map movement ends
+    map.on('moveend', function () {
+      var center = map.getCenter();
+      var lat = center.lat.toFixed(6);
+      var lng = center.lng.toFixed(6);
+
+      // Update the Latitude and Longitude input fields
+      document.getElementById('lat').value = lat;
+      document.getElementById('lng').value = lng;
+
+      // Call the Mapbox Geocoding API to get the address
+      var url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${mapboxgl.accessToken}`;
+
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          if (data && data.features && data.features.length > 0) {
+            var address = data.features[0].place_name;
+            document.getElementById('address').value = address;
+          } else {
+            document.getElementById('address').value = "No address found.";
+          }
+        })
+        .catch(error => {
+          document.getElementById('address').value = "Error retrieving address.";
+        });
+    });
+
+    // Event listener for the new button to move the map to the coordinates of the entered address
+    document.getElementById('addressToCoordinates').addEventListener('click', function () {
+      var address = document.getElementById('address').value;
+
+      if (address) {
+        var encodedAddress = encodeURIComponent(address);
+        var url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${mapboxgl.accessToken}`;
+
+        fetch(url)
+          .then(response => response.json())
+          .then(data => {
+            if (data && data.features && data.features.length > 0) {
+              var coordinates = data.features[0].center; // [lng, lat]
+              var lng = coordinates[0].toFixed(6);
+              var lat = coordinates[1].toFixed(6);
+
+              // Move the map to the new coordinates
+              map.flyTo({
+                center: [lng, lat],
+                essential: true, // This ensures the animation is essential
+                zoom: 15
+              });
+
+              // Update the Latitude and Longitude input fields
+              document.getElementById('lat').value = lat;
+              document.getElementById('lng').value = lng;
+
+              // Update the marker to the new position
+              marker.setLngLat([lng, lat]);
+
+              // Update the geofence circle with the new center
+              map.getSource('geofence').setData(createGeoJSONCircle({ lat: lat, lng: lng }, radiusInFeet));
+            } else {
+              alert("Address not found. Please try again with a full address.");
+            }
+          })
+          .catch(error => {
+            console.error('Error with forward geocoding:', error);
+            alert("Error retrieving coordinates for the address.");
+          });
+      } else {
+        alert("Please enter an address.");
+      }
+    });
+  </script>
+</body>
+</html>
