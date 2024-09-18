@@ -51,35 +51,89 @@ const map = new mapboxgl.Map({
 
 // Show loading spinner
 
-map.on("load", () => {
+
+//latest
+// map.on("load", () => {
+//   console.log("Map loaded");
+
+//   // Show loading spinner and fetch data
+//   showLoadingSpinner();
+
+//   // Fetch dropdown data first before other tasks
+//   fetchDropdownData()
+//     .then(() => {
+//       if (groupId) {
+//         console.log("GroupId found, fetching fence and member data...");
+//         return fetchFenceData()
+//           .then(() => fetchmembersData());
+//       } else {
+//         console.log("No GroupId found, skipping fence and member data fetch.");
+//         return Promise.resolve(); // Do nothing if no groupId is present
+//       }
+//     })
+//     .finally(() => hideLoadingSpinner());
+
+//   // Update profile section with sessionStorage values
+//   if (userName) {
+//     document.getElementById('profileName').innerText = userName;
+//   }
+//   if (userAvatar) {
+//     const avatarImg = document.querySelector('.profile-img');
+//     console.log("Profile image element:", avatarImg);
+
+//     if (avatarImg) { // Ensure avatarImg is found before trying to set its src
+//       console.log("Setting profile image source to:", userAvatar);
+//       avatarImg.src = userAvatar;
+//     } else {
+//       console.error("Profile image element not found!");
+//     }
+//   } else {
+//     console.log("No user avatar available.");
+//   }
+// });
+
+map.on("load", async () => {
   console.log("Map loaded");
 
-  // Show loading spinner and fetch data
-  showLoadingSpinner();
+  try {
+    // Show loading spinner and fetch data
+    showLoadingSpinner();
 
-  // Fetch dropdown data first before other tasks
-  fetchDropdownData()
-    .then(() => {
-      if (groupId) {
-        console.log("GroupId found, fetching fence and member data...");
-        return fetchFenceData()
-          .then(() => fetchmembersData());
-      } else {
-        console.log("No GroupId found, skipping fence and member data fetch.");
-        return Promise.resolve(); // Do nothing if no groupId is present
-      }
-    })
-    .finally(() => hideLoadingSpinner());
+    // Fetch dropdown data first before other tasks
+    await fetchDropdownData();
 
-  // Update profile section with sessionStorage values
+    // Check if GroupId is present
+    if (groupId) {
+      console.log("GroupId found, fetching fence and member data...");
+
+      // Fetch fence and member data
+      await fetchFenceData();
+      await fetchmembersData();
+    } else {
+      console.log("No GroupId found, skipping fence and member data fetch.");
+    }
+
+    // Update profile section with sessionStorage values
+    updateProfileSection(userName, userAvatar);
+
+  } catch (error) {
+    console.error("Error during map load process:", error);
+  } finally {
+    // Always hide loading spinner after the process completes
+    hideLoadingSpinner();
+  }
+});
+
+// Function to update profile section with name and avatar
+function updateProfileSection(userName, userAvatar) {
   if (userName) {
     document.getElementById('profileName').innerText = userName;
   }
+
   if (userAvatar) {
     const avatarImg = document.querySelector('.profile-img');
-    console.log("Profile image element:", avatarImg);
 
-    if (avatarImg) { // Ensure avatarImg is found before trying to set its src
+    if (avatarImg) {
       console.log("Setting profile image source to:", userAvatar);
       avatarImg.src = userAvatar;
     } else {
@@ -88,7 +142,7 @@ map.on("load", () => {
   } else {
     console.log("No user avatar available.");
   }
-});
+}
 
 
 function showLoadingSpinner() {
