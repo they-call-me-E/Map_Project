@@ -19,6 +19,12 @@
 </head>
 
 <body>
+  <script>
+    const token = sessionStorage.getItem('token');
+    if (!token) {
+      window.location.href = 'Auth/login.html'
+    }
+  </script>
   <!-- Loading Spinner -->
   <div id="loadingSpinner"></div>
 
@@ -32,11 +38,6 @@
         <button class="close-menu" id="close-menu">&times;</button>
       </div>
       <h3>Group Selection</h3>
-      <!-- <select>
-        <option value="option1">Option 1</option>
-        <option value="option2">Option 2</option>
-        <option value="option3">Option 3</option>
-      </select> -->
 
       <!-- Dropdown with dynamic items -->
       <div class="dropdown" id="customDropdown">
@@ -98,25 +99,7 @@
     <div class="members-container" id="membersCon">
       <!-- Members div with dynamic height and scrolling -->
       <div class="members-div" id="membersDiv">
-        <!-- Member list will be dynamically added here -->
-        <!-- <div class="member-box">
-           <div class="member-avatar"><img
-              src="https://raw.githubusercontent.com/they-call-me-E/Sharptools/main/CustomeTile/Mapviewer/pngimg.com%20-%20deadpool_PNG15.png">
-          </div>
-          <div>
-            <div class="member-name">Jake Mohl</div>
-            <div class="gps-coordinates">Lat: 34.227085, Long: -80.843124</div>
-          </div>
-        </div>
-        <div class="member-box">
-          <div class="member-avatar"><img
-              src="https://raw.githubusercontent.com/they-call-me-E/Sharptools/main/CustomeTile/Mapviewer/pngimg.com%20-%20deadpool_PNG15.png">
-          </div>
-          <div>
-            <div class="member-name">Jake Mohl</div>
-            <div class="gps-coordinates">Lat: 32.227085, Long: -80.843124</div>
-          </div> 
-        </div>  -->
+
       </div>
       <button id="members-settings-btn">
         <span class="svg-icon">

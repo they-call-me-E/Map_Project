@@ -1,4 +1,14 @@
  /* General styling */
+ :root {
+     --text-main-color: #ffffff;
+     --text-second-color: #FFFFFF99;
+     --menu-background: #07101d;
+     --menu-button-color: #47e9ff;
+
+
+ }
+
+
  body,
  html {
      margin: 0;
@@ -47,16 +57,45 @@
      align-items: center;
  }
 
+ /* Expanded marker style */
+ .circle-div-expanded {
+     width: 200px;
+     height: 100px;
+     border-radius: 10px;
+     /* You can change this for rectangular shape */
+     background-color: white;
+     display: flex;
+     justify-content: center;
+     align-items: center;
+     transition: width 0.3s ease, height 0.3s ease;
+     /* top: -41px; */
+
+ }
+
  /* Inner colored circle */
  .circle-inner {
-     width: 90%;
-     height: 90%;
+     width: 55px;
+     /* 90%; */
+     height: 55px;
+     /* 90% */
      border-radius: 50%;
      background-color: rgb(0, 122, 255);
      /* Default color */
      display: flex;
      justify-content: center;
      align-items: center;
+ }
+
+ .circle-inner-expanded {
+     width: 55px;
+     height: 55px;
+     border-radius: 50%;
+     background-color: rgb(0, 122, 255);
+     display: flex;
+     justify-content: center;
+     align-items: center;
+     position: absolute;
+     left: 5px;
  }
 
  .circle-inner div {
@@ -66,8 +105,8 @@
  }
 
  .circle-div img {
-     width: 100%;
-     height: 100%;
+     width: 60px;
+     height: 60px;
      border-radius: 50%;
      object-fit: cover;
      /* Ensures the image fits inside the circle */
@@ -121,7 +160,7 @@
      width: 250px;
      height: 500px;
      /* Set height to accommodate 4 member cards */
-     background-color: #07101d;
+     background-color: var(--menu-background);
      color: white;
      transition: left 0.3s ease;
      z-index: 1000;
@@ -137,7 +176,7 @@
  .top-menu {
      width: 100%;
      height: auto;
-     background-color: #07101d;
+     background-color: var(--menu-background);
      display: flex;
      flex-direction: column;
      justify-content: center;
@@ -196,7 +235,7 @@
      justify-content: center;
      width: 48%;
      padding: 10px;
-     background-color: #47e9ff;
+     background-color: var(--menu-button-color);
      color: #080d2b;
      border: none;
      cursor: pointer;
@@ -234,7 +273,7 @@
  /* Updated members div styles */
  .members-div {
      width: 100%;
-     background-color: #07101d;
+     background-color: var(--menu-background);
      color: white;
      max-height: 0;
      overflow: hidden;
@@ -270,7 +309,7 @@
      width: 100%;
      max-width: 220px;
      padding: 10px;
-     background-color: #47e9ff;
+     background-color: var(--menu-button-color);
      color: #080d2b;
      border: none;
      cursor: pointer;
@@ -357,7 +396,7 @@
      font-size: 24px;
      padding: 10px 15px;
      cursor: pointer;
-     background-color: #47e9ff;
+     background-color: var(--menu-button-color);
      color: #080D2B;
      border: none;
      position: fixed;
@@ -391,7 +430,7 @@
      position: absolute;
      width: 38px;
      height: 38px;
-     background-color: #47e9ff;
+     background-color: var(--menu-button-color);
      color: #080d2b;
      border: none;
      cursor: pointer;
@@ -418,7 +457,7 @@
  .marker-expanded {
      width: 220px;
      height: 120px;
-     background-color: #fff;
+     background-color: var(--menu-background);
      border: 2px solid #007cbf;
      border-radius: 10px;
      position: relative;
@@ -426,6 +465,17 @@
      z-index: 1;
      padding: 10px 10px 10px 70px;
      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+     /* top: -85px; */
+     transition: width 0.4s ease, height 0.4s ease;
+     /* Smooth transition for width and height */
+ }
+
+ .marker-expanded.show {
+     display: block;
+     width: 200px;
+     height: 100px;
+     transition: width 0.4s ease, height 0.4s ease;
+     /* Smooth transition for width and height */
  }
 
  /* Marker circle inside rectangle */
@@ -443,7 +493,7 @@
 
  .marker-expanded .content {
      font-size: 12px;
-     color: #333;
+     color: var(--text-second-color);
  }
 
  /* Close button styles */
@@ -460,6 +510,137 @@
      height: 20px;
      text-align: center;
      line-height: 18px;
+ }
+
+ .popup-member-name {
+     position: fixed;
+     top: 31px;
+     left: 81px;
+     font-weight: bold;
+     font-size: x-large;
+     color: var(--text-main-color);
+ }
+
+ .popup-charging-icon.charging {
+     stroke: var(--menu-button-color);
+     position: fixed;
+     top: 5px;
+     left: 270px;
+
+ }
+
+ .popup-charging-icon.not-charging {
+     stroke: var(--menu-button-color);
+     position: fixed;
+     top: 5px;
+     left: 270px;
+
+ }
+
+ .popup-battery {
+     position: fixed;
+     top: 8px;
+     left: 243px;
+     font-size: small;
+ }
+
+ .popup-wifi-icon.true {
+     stroke: var(--menu-button-color);
+     position: fixed;
+     top: 6px;
+     left: 215px;
+     height: 20px;
+ }
+
+ .popup-member-speed {
+     color: var(--text-main-color);
+     font-size: small;
+     font-weight: bold;
+     position: fixed;
+     top: 60px;
+     left: 80px;
+ }
+
+ .popup-member-speed-value {
+     color: var(--text-second-color);
+     font-size: small;
+     font-weight: bold;
+     position: fixed;
+     top: 60px;
+     left: 130px;
+
+ }
+
+ .popup-screen-on {
+     color: var(--text-main-color);
+     font-size: small;
+     font-weight: bold;
+     position: fixed;
+     top: 60px;
+     left: 185px;
+ }
+
+ .popup-screen-on-status {
+     color: var(--text-second-color);
+     font-size: small;
+     font-weight: bold;
+     position: fixed;
+     top: 60px;
+     left: 240px;
+ }
+
+ .popup-member-address {
+     color: var(--text-main-color);
+     font-size: small;
+     font-weight: bold;
+     position: fixed;
+     top: 80px;
+     left: 8px;
+ }
+
+ .popup-member-address-value {
+     color: var(--text-second-color);
+     font-size: small;
+     font-weight: bold;
+     position: fixed;
+     top: 80px;
+     left: 68px;
+ }
+
+ .popup-lat {
+     color: var(--text-main-color);
+     font-size: small;
+     font-weight: bold;
+     position: fixed;
+     top: 120px;
+     left: 10px;
+ }
+
+ .popup-lat-value {
+     color: var(--text-second-color);
+     font-size: small;
+     font-weight: bold;
+     position: fixed;
+     top: 120px;
+     left: 40px;
+ }
+
+ .popup-long {
+     color: var(--text-main-color);
+     font-size: small;
+     font-weight: bold;
+     position: fixed;
+     top: 120px;
+     left: 120px;
+ }
+
+ .popup-long-value {
+     color: var(--text-second-color);
+     font-size: small;
+     font-weight: bold;
+     position: fixed;
+     top: 120px;
+     left: 160px;
  }
 
  .members-container {
@@ -489,7 +670,7 @@
      /* Allow positioning relative to the container */
      width: 36px;
      height: 36px;
-     background-color: #47e9ff;
+     background-color: var(--menu-button-color);
      color: #080d2b;
      border: none;
      cursor: pointer;
@@ -522,7 +703,7 @@
      left: -240px;
      width: 100%;
      height: 100%;
-     background-color: #07101d;
+     background-color: var(--menu-background);
      z-index: 1001;
      /* opacity: 0.95; */
      transition: left 0.3s ease;
@@ -565,7 +746,7 @@
      /* Set the text color to white */
      border: none;
      outline: none;
-     background-color: #07101d;
+     background-color: var(--menu-background);
      /* Match the background to the menu or use a box color */
      border-radius: 10px;
      /* Optional: make the input look like a box */
@@ -690,7 +871,7 @@
 
  /* When the checkbox is checked, change the slider's background */
  input:checked+.slider {
-     background-color: #47e9ff;
+     background-color: var(--menu-button-color);
  }
 
  /* Move the slider's circle to the right when checked */
@@ -767,7 +948,7 @@
  }
 
  .marker .badge img {
-     width: 20px;
+     width: 40px;
      /* Smaller width to fit alongside text */
      height: 20px;
      /* Smaller height to fit alongside text */
@@ -777,7 +958,7 @@
  .marker .badge-speed {
      font-size: 12px;
      /* Adjust font size */
-     margin-left: 4px;
+     margin-left: -1px;
      /* Space between the image and speed */
      color: #000;
      /* Text color */

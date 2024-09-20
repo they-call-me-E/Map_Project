@@ -1,5 +1,8 @@
 // Fetch sessionStorage variables
-const token = sessionStorage.getItem('token');
+// const token = sessionStorage.getItem('token');
+// if (!token) {
+//   window.location.href = 'Auth/login.html'
+// }
 const userName = sessionStorage.getItem('name');
 const userAvatar = sessionStorage.getItem('avatar');
 console.log("Avatar URL from sessionStorage:", userAvatar);
@@ -18,111 +21,36 @@ const map = new mapboxgl.Map({
   zoom: 8,
 });
 
-// map.on("load", () => {
-//   console.log("Map loaded");
-
-//   // Show loading spinner and fetch data
-//   showLoadingSpinner();
-//   // Fetch dropdown data first before other tasks
-//   fetchDropdownData()
-//   fetchFenceData()
-//     .then(() => fetchmembersData())
-//     .finally(() => hideLoadingSpinner());
-
-//   // Update profile section with sessionStorage values
-//   if (userName) {
-//     document.getElementById('profileName').innerText = userName;
-//   }
-//   if (userAvatar) {
-//     const avatarImg = document.querySelector('.profile-img');
-//     console.log("Profile image element:", avatarImg);
-
-//     if (avatarImg) { // Ensure avatarImg is found before trying to set its src
-//       console.log("Setting profile image source to:", userAvatar);
-//       avatarImg.src = userAvatar;
-//     } else {
-//       console.error("Profile image element not found!");
-//     }
-//   } else {
-//     console.log("No user avatar available.");
-//   }
-
-// }); 
-
-// Show loading spinner
-
-
-//latest
-// map.on("load", () => {
-//   console.log("Map loaded");
-
-//   // Show loading spinner and fetch data
-//   showLoadingSpinner();
-
-//   // Fetch dropdown data first before other tasks
-//   fetchDropdownData()
-//     .then(() => {
-//       if (groupId) {
-//         console.log("GroupId found, fetching fence and member data...");
-//         return fetchFenceData()
-//           .then(() => fetchmembersData());
-//       } else {
-//         console.log("No GroupId found, skipping fence and member data fetch.");
-//         return Promise.resolve(); // Do nothing if no groupId is present
-//       }
-//     })
-//     .finally(() => hideLoadingSpinner());
-
-//   // Update profile section with sessionStorage values
-//   if (userName) {
-//     document.getElementById('profileName').innerText = userName;
-//   }
-//   if (userAvatar) {
-//     const avatarImg = document.querySelector('.profile-img');
-//     console.log("Profile image element:", avatarImg);
-
-//     if (avatarImg) { // Ensure avatarImg is found before trying to set its src
-//       console.log("Setting profile image source to:", userAvatar);
-//       avatarImg.src = userAvatar;
-//     } else {
-//       console.error("Profile image element not found!");
-//     }
-//   } else {
-//     console.log("No user avatar available.");
-//   }
-// });
 
 map.on("load", async () => {
   console.log("Map loaded");
 
   try {
-    // Show loading spinner and fetch data
     showLoadingSpinner();
 
-    // Fetch dropdown data first before other tasks
     await fetchDropdownData();
 
-    // Check if GroupId is present
     if (groupId) {
       console.log("GroupId found, fetching fence and member data...");
 
-      // Fetch fence and member data
       await fetchFenceData();
       await fetchmembersData();
     } else {
       console.log("No GroupId found, skipping fence and member data fetch.");
     }
 
-    // Update profile section with sessionStorage values
     updateProfileSection(userName, userAvatar);
-
   } catch (error) {
-    console.error("Error during map load process:", error);
+    handleError(error, "Error during map load process");
   } finally {
-    // Always hide loading spinner after the process completes
     hideLoadingSpinner();
   }
 });
+
+// Error handler function for centralized error logging
+function handleError(error, context) {
+  console.error(`${context}:`, error);
+}
 
 // Function to update profile section with name and avatar
 function updateProfileSection(userName, userAvatar) {
@@ -353,233 +281,12 @@ function addMemberToMenu(memberData, bgColor) {
 }
 
 
-// Add member marker to the map with expandable rectangle on click and badge
-function addMemberMarker_bak(memberData, bgColor) {
-  // Dummy data for testing
-  const isMovingTest = true; // Simulate that the member is moving
-  const speedTest = 10; // Simulate speed over 5 mph
 
-  // Use actual data if available, otherwise fallback to dummy data
-  const { latitude, longitude } = memberData.location;
-  const is_moving = memberData.is_moving !== undefined ? memberData.is_moving : isMovingTest;
-  const speed = memberData.location.speed !== undefined ? memberData.location.speed : speedTest;
-  const memberId = memberData.uuid || memberData._id; // Assuming memberData contains a unique ID
-
-  if (!latitude || !longitude) {
-    console.error("Missing latitude or longitude for member:", memberData);
-    return;
-  }
-
-  // Check if the marker for this member already exists
-  if (markers[memberId]) {
-    // Update the existing marker's position and badge
-    console.log(`Marker position updated to: Lat: ${latitude}, Long: ${longitude}`);
-
-    const markerEl = markers[memberId].getElement();
-
-    // Update marker location
-    markers[memberId].setLngLat([longitude, latitude]);
-
-    // Update badge if member is moving and speed > 5
-    const badgeDiv = markerEl.querySelector(".badge");
-    if (is_moving && speed > 5) {
-      if (!badgeDiv) {
-        // Add new badge if not already present
-        console.log(`Adding badge for moving member: ${memberData.name} (Speed: ${speed} mph)`);
-
-        const newBadgeDiv = document.createElement("div");
-        newBadgeDiv.classList.add("badge");
-
-        const badgeImg = document.createElement("img");
-        badgeImg.src = "https://raw.githubusercontent.com/they-call-me-E/Sharptools/main/CustomeTile/Mapviewer/driving.png";
-
-        const speedSpan = document.createElement("span");
-        speedSpan.classList.add("badge-speed");
-        speedSpan.textContent = `${speed} mph`;
-
-        newBadgeDiv.appendChild(badgeImg);
-        newBadgeDiv.appendChild(speedSpan);
-        markerEl.appendChild(newBadgeDiv);
-      } else {
-        // Update existing badge with new speed
-        console.log(`Updating badge for member: ${memberData.name} with new speed: ${speed} mph`);
-
-        badgeDiv.querySelector(".badge-speed").textContent = `${speed} mph`;
-      }
-    } else if (badgeDiv) {
-      // Remove badge if no longer moving or speed <= 5
-      console.log(`Removing badge for member: ${memberData.name} (No longer moving or speed <= 5)`);
-
-      badgeDiv.remove();
-    }
-  } else {
-    // Create a new marker if one doesn't exist
-    console.log(`Creating new marker for member: ${memberData.name} (ID: ${memberId})`);
-
-    const el = document.createElement("div");
-    el.className = "marker";
-
-    const circleDiv = document.createElement("div");
-    circleDiv.classList.add("circle-div");
-
-    if (memberData.avatar) {
-      const avatarImg = document.createElement("img");
-      avatarImg.src = memberData.avatar;
-      circleDiv.appendChild(avatarImg); // Add avatar image inside the circle
-    } else {
-      const innerCircle = document.createElement("div");
-      innerCircle.classList.add("circle-inner");
-      innerCircle.style.backgroundColor = bgColor;
-      const initialsDiv = document.createElement("div");
-      initialsDiv.textContent = getInitials(memberData.name);
-      innerCircle.appendChild(initialsDiv);
-      circleDiv.appendChild(innerCircle);
-    }
-
-    el.appendChild(circleDiv);
-
-    // Add badge if speed > 5
-    if (is_moving && speed > 5) {
-      console.log(`Adding badge for moving member: ${memberData.name} (Speed: ${speed} mph)`);
-
-      const badgeDiv = document.createElement("div");
-      badgeDiv.classList.add("badge");
-
-      const badgeImg = document.createElement("img");
-      badgeImg.src = "https://raw.githubusercontent.com/they-call-me-E/Sharptools/main/CustomeTile/Mapviewer/driving.png";
-
-      const speedSpan = document.createElement("span");
-      speedSpan.classList.add("badge-speed");
-      speedSpan.textContent = `${speed} mph`;
-
-      badgeDiv.appendChild(badgeImg);
-      badgeDiv.appendChild(speedSpan);
-      el.appendChild(badgeDiv);
-    }
-
-    const marker = new mapboxgl.Marker(el).setLngLat([longitude, latitude]).addTo(map);
-    markers[memberId] = marker; // Store the marker by member ID
-    console.log(`Marker created for member: ${memberData.name} at Lat: ${latitude}, Long: ${longitude}`);
-
-  }
-}
-
-// Add member marker to the map with expandable rectangle on click and badge
-function addMemberMarkerv1(memberData, bgColor) {
-  // Dummy data for testing
-  const isMovingTest = true; // Simulate that the member is moving
-  const speedTest = 10; // Simulate speed over 5 mph
-
-  // Use actual data if available, otherwise fallback to dummy data
-  const { latitude, longitude } = memberData.location;
-  const is_moving = memberData.is_moving !== undefined ? memberData.is_moving : isMovingTest;
-  const speed = memberData.location.speed !== undefined ? memberData.location.speed : speedTest;
-  const memberId = memberData.uuid || memberData._id; // Assuming memberData contains a unique ID
-
-  if (!latitude || !longitude) {
-    console.error("Missing latitude or longitude for member:", memberData);
-    return;
-  }
-
-  // Check if the marker for this member already exists
-  if (markers[memberId]) {
-    // Update the existing marker's position and badge
-    console.log(`Marker position updated to: Lat: ${latitude}, Long: ${longitude}`);
-
-    const markerEl = markers[memberId].getElement();
-
-    // Update marker location
-    markers[memberId].setLngLat([longitude, latitude]);
-
-    // Update badge if member is moving and speed > 5
-    const badgeDiv = markerEl.querySelector(".badge");
-    if (is_moving && speed > 5) {
-      if (!badgeDiv) {
-        // Add new badge if not already present
-        console.log(`Adding badge for moving member: ${memberData.name} (Speed: ${speed} mph)`);
-
-        const newBadgeDiv = document.createElement("div");
-        newBadgeDiv.classList.add("badge");
-
-        const badgeImg = document.createElement("img");
-        badgeImg.src = "https://raw.githubusercontent.com/they-call-me-E/Sharptools/main/CustomeTile/Mapviewer/driving.png";
-
-        const speedSpan = document.createElement("span");
-        speedSpan.classList.add("badge-speed");
-        speedSpan.textContent = `${speed} mph`;
-
-        newBadgeDiv.appendChild(badgeImg);
-        newBadgeDiv.appendChild(speedSpan);
-        markerEl.appendChild(newBadgeDiv);
-      } else {
-        // Update existing badge with new speed
-        console.log(`Updating badge for member: ${memberData.name} with new speed: ${speed} mph`);
-        badgeDiv.querySelector(".badge-speed").textContent = `${speed} mph`;
-      }
-    } else if (badgeDiv) {
-      // Remove badge if no longer moving or speed <= 5
-      console.log(`Removing badge for member: ${memberData.name} (No longer moving or speed <= 5)`);
-      badgeDiv.remove();
-    }
-  } else {
-    // Create a new marker if one doesn't exist
-    console.log(`Creating new marker for member: ${memberData.name} (ID: ${memberId})`);
-
-    const el = document.createElement("div");
-    el.className = "marker";
-
-    const circleDiv = document.createElement("div");
-    circleDiv.classList.add("circle-div");
-
-    // If the member has an avatar, show it; otherwise, show initials
-    if (memberData.avatar) {
-      const avatarImg = document.createElement("img");
-      avatarImg.src = memberData.avatar || 'path/to/default-avatar.png'; // Add fallback to default avatar
-      circleDiv.appendChild(avatarImg); // Add avatar image inside the circle
-    } else {
-      // If no avatar, show the initials inside a circle
-      const innerCircle = document.createElement("div");
-      innerCircle.classList.add("circle-inner");
-      innerCircle.style.backgroundColor = bgColor; // Set background color dynamically
-
-      const initialsDiv = document.createElement("div");
-      initialsDiv.textContent = getInitials(memberData.name); // Generate initials from the name
-
-      innerCircle.appendChild(initialsDiv);
-      circleDiv.appendChild(innerCircle);
-    }
-
-    el.appendChild(circleDiv);
-
-    // Add badge if speed > 5
-    if (is_moving && speed > 5) {
-      console.log(`Adding badge for moving member: ${memberData.name} (Speed: ${speed} mph)`);
-
-      const badgeDiv = document.createElement("div");
-      badgeDiv.classList.add("badge");
-
-      const badgeImg = document.createElement("img");
-      badgeImg.src = "https://raw.githubusercontent.com/they-call-me-E/Sharptools/main/CustomeTile/Mapviewer/driving.png";
-
-      const speedSpan = document.createElement("span");
-      speedSpan.classList.add("badge-speed");
-      speedSpan.textContent = `${speed} mph`;
-
-      badgeDiv.appendChild(badgeImg);
-      badgeDiv.appendChild(speedSpan);
-      el.appendChild(badgeDiv);
-    }
-
-    const marker = new mapboxgl.Marker(el).setLngLat([longitude, latitude]).addTo(map);
-    markers[memberId] = marker; // Store the marker by member ID
-    console.log(`Marker created for member: ${memberData.name} at Lat: ${latitude}, Long: ${longitude}`);
-  }
-}
 
 function addMemberMarker(memberData, bgColor) {
   const { latitude, longitude } = memberData.location;
   const is_moving = memberData.is_moving !== undefined ? memberData.is_moving : true; // Assume moving if undefined
-  const speed = memberData.location.speed !== undefined ? memberData.location.speed : 10; // Default speed if undefined
+  const speed = memberData.status.speed !== undefined ? memberData.status.speed : 10; // Default speed if undefined
   const memberId = memberData.uuid || memberData._id; // Unique member ID
 
   if (!latitude || !longitude) {
@@ -607,7 +314,7 @@ function addMemberMarker(memberData, bgColor) {
         newBadgeDiv.classList.add("badge");
 
         const badgeImg = document.createElement("img");
-        badgeImg.src = "https://raw.githubusercontent.com/they-call-me-E/Sharptools/main/CustomeTile/Mapviewer/driving.png";
+        badgeImg.src = "https://raw.githubusercontent.com/they-call-me-E/Map_Project/main/assets/driving.png";
 
         const speedSpan = document.createElement("span");
         speedSpan.classList.add("badge-speed");
@@ -627,7 +334,7 @@ function addMemberMarker(memberData, bgColor) {
       badgeDiv.remove();
     }
   } else {
-    // Create a new marker if one doesn't exist
+    // Create a new marker if one doesn't exist 
     console.log(`Creating new marker for member: ${memberData.name}`);
 
     const el = document.createElement("div");
@@ -656,6 +363,11 @@ function addMemberMarker(memberData, bgColor) {
 
     el.appendChild(circleDiv);
 
+    // Add the tail to the marker
+    const tailDiv = document.createElement("div");
+    tailDiv.classList.add("tail-div");
+    el.appendChild(tailDiv); // Attach tail to the marker
+
     // Add badge if moving and speed > 5
     if (is_moving && speed > 5) {
       console.log(`Adding badge for moving member: ${memberData.name} (Speed: ${speed} mph)`);
@@ -664,7 +376,7 @@ function addMemberMarker(memberData, bgColor) {
       badgeDiv.classList.add("badge");
 
       const badgeImg = document.createElement("img");
-      badgeImg.src = "https://raw.githubusercontent.com/they-call-me-E/Sharptools/main/CustomeTile/Mapviewer/driving.png";
+      badgeImg.src = "https://raw.githubusercontent.com/they-call-me-E/Map_Project/main/assets/driving.png";
 
       const speedSpan = document.createElement("span");
       speedSpan.classList.add("badge-speed");
@@ -682,20 +394,96 @@ function addMemberMarker(memberData, bgColor) {
 
     const expandedCircleDiv = circleDiv.cloneNode(true);
     expandedDiv.appendChild(expandedCircleDiv);
-
+    console.log('Here');
     // Add content to the expanded marker
     const content = `
-      <div class="content">
-        <strong>${memberData.name}</strong><br>
-        Location: ${memberData.address || 'N/A'}<br>
-        Battery: ${memberData.battery || 'N/A'}%<br>
-        Wi-Fi: ${memberData.wifi ? 'On' : 'Off'}
-      </div>
-      <button class="close-btn">&times;</button>
-    `;
-    expandedDiv.innerHTML += content;
-    expandedDiv.querySelector('.close-btn').style.display = "block"; // Show close button
+    <div class="content">
+      <strong class="popup-member-name">${memberData.name}</strong><br>
 
+      <!-- Charging Icon -->
+    ${memberData?.status?.device?.charging ? `
+      <svg 
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        stroke="#000000"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="popup-charging-icon charging"
+      >
+        <path d="M14 7h2a2 2 0 012 2v6a2 2 0 01-2 2h-3" />
+        <path d="M7 7H4a2 2 0 00-2 2v6a2 2 0 002 2h2" />
+        <polyline points="11 7 8 12 12 12 9 17" />
+        <line x1="22" x2="22" y1="11" y2="13" />
+      </svg>
+    ` : `
+      <svg 
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#000000"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="popup-charging-icon not-charging"
+      >
+        <rect x="2" y="7" width="16" height="10" rx="2" ry="2" />
+        <line x1="22" x2="22" y1="11" y2="13" />
+        <line x1="6" x2="6" y1="10" y2="14" />
+        <line x1="10" x2="10" y1="10" y2="14" />
+      </svg>
+    `}<br>
+      <br>
+
+      <!-- WiFi Icon -->
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+      
+      stroke="#000000"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="popup-wifi-icon ${memberData?.status?.device?.wifi ? 'true' : 'false'}"
+    >
+      <path d="M5 13a10 10 0 0114 0" />
+      <path d="M8.5 16.5a5 5 0 017 0" />
+      <path d="M2 8.82a15 15 0 0120 0" />
+      <line x1="12" y1="20" x2="12.01" y2="20" />
+    </svg>
+      <span class="popup-member-speed">Speed:</span><span class="popup-member-speed-value"> ${memberData.status.speed} MPH</span><br>
+      <br>
+      <span class="popup-screen-on">Screen: </span>
+      ${memberData?.status?.device?.screen ? `
+       <span class="popup-screen-on-status">On</span>
+    ` : `
+      <span class="pop-screen-on-status">Off</span>
+    `}<br>
+      <!-- Latitude -->
+       <span class="popup-member-address">Addres:</span><span class="popup-member-address-value">${memberData.location.address || 'N/A'}</span>
+      <span class="popup-lat">Lat:</span><span class="popup-lat-value">${latitude}</span>
+
+      <!-- Longitude -->
+      <span class="popup-long">Long:</span><span class="popup-long-value">${longitude}</span><br>
+
+      <!-- Battery Status -->
+      <span class="popup-battery">${memberData.status.device.battery_level || 'N/A'}%</span>
+    </div>
+    <button class="close-btn">&times;</button>
+    `;
+
+    // const content = `
+    //   <div class="content">
+    //     <strong>${memberData.name}</strong><br>
+    //     Location: ${memberData.address || 'N/A'}<br>
+    //     Battery: ${memberData.battery || 'N/A'}%<br>
+    //     Wi-Fi: ${memberData.wifi ? 'On' : 'Off'}
+    //   </div>
+    //   <button class="close-btn">&times;</button>
+    // `;
+    expandedDiv.innerHTML += content;
+
+    expandedDiv.querySelector('.close-btn').style.display = "hidden"; // Show close button
+    console.log("or here");
     el.appendChild(expandedDiv); // Add expanded view to marker
 
     // Add the marker to the map
@@ -703,6 +491,8 @@ function addMemberMarker(memberData, bgColor) {
     markers[memberId] = marker; // Store marker by member ID
 
     // Marker click event to fly to location and toggle expansion
+    const circleInner = circleDiv.querySelector('.circle-inner'); // Correct class name 'circle-inner'
+    const badgeDiv = el.querySelector('.badge');
     el.addEventListener("click", function () {
       console.log(`Marker clicked: ${memberData.name}`);
 
@@ -717,10 +507,23 @@ function addMemberMarker(memberData, bgColor) {
       if (expandedDiv.style.display === "none") {
         expandedDiv.style.display = "block";
         circleDiv.style.display = "none";
+        badgeDiv.style.visibility = "hidden";
       } else {
         expandedDiv.style.display = "none";
         circleDiv.style.display = "flex";
+        badgeDiv.style.visibility = "visible";
       }
+
+
+      // if (!circleDiv.classList.contains("circle-div-expanded")) {
+      //   // Expand the marker
+      //   circleDiv.classList.add("circle-div-expanded");
+      //   circleInner.classList.add("circle-inner-expanded");
+      // } else {
+      //   // Collapse the marker
+      //   circleDiv.classList.remove("circle-div-expanded");
+      //   circleInner.classList.remove("circle-inner-expanded");
+      // }
     });
 
     // Close button event to collapse the expanded marker
@@ -732,7 +535,7 @@ function addMemberMarker(memberData, bgColor) {
   }
 }
 
-// Toggle the menu open
+// Toggle the menu open 
 document
   .getElementById("toggle-menu")
   .addEventListener("click", function () {
