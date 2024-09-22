@@ -1,14 +1,16 @@
 // Fetch sessionStorage variables
 // const token = sessionStorage.getItem('token');
-// if (!token) {
-//   window.location.href = 'Auth/login.html'
-// }
+if (!token) {
+  window.location.href = 'Auth/login.html'
+}
 const userName = sessionStorage.getItem('name');
 const userAvatar = sessionStorage.getItem('avatar');
 console.log("Avatar URL from sessionStorage:", userAvatar);
 const markers = {}; // Object to store markers by member ID
-const groupId = localStorage.getItem('GroupId');
-
+let groupId = localStorage.getItem('GroupId');
+let places = null;
+let isDarkMode = true; // Keep track of dark mode
+const color = isDarkMode ? "#FFFFFF" : "#FFFFFF"; // White for dark mode, black for light mode
 console.log("Retrieved GroupUUID from localStorage:", groupId);
 
 
@@ -21,8 +23,20 @@ const map = new mapboxgl.Map({
   zoom: 8,
 });
 
-
 map.on("load", async () => {
+  console.log("Map loaded");
+  loadMapData();
+
+});
+
+
+
+
+// Function to load all map data
+async function loadMapData() {
+  removeMapData();
+  console.log('loading map data');
+
   console.log("Map loaded");
 
   try {
@@ -45,7 +59,63 @@ map.on("load", async () => {
   } finally {
     hideLoadingSpinner();
   }
-});
+}
+
+
+function removeMapData() {
+  if (places && places.document) {
+    // Remove geofence layers
+    places.document.forEach((geofence) => {
+      const fillLayerId = geofence.uuid;
+      const circleLayerId = geofence.uuid + "-circle";
+
+      // Remove the filled geofence layer
+      if (map.getLayer(fillLayerId)) {
+        map.removeLayer(fillLayerId);
+      }
+
+      // Remove the outer circle layer
+      if (map.getLayer(circleLayerId)) {
+        map.removeLayer(circleLayerId);
+      }
+
+      // Remove the associated geofence source
+      if (map.getSource(fillLayerId)) {
+        map.removeSource(fillLayerId);
+      }
+
+      if (map.getSource(circleLayerId)) {
+        map.removeSource(circleLayerId);
+      }
+    });
+  } else {
+    console.log("No geofences found to remove.");
+  }
+
+  // Remove all markers and their associated SVGs
+  for (const id in markers) {
+    if (markers[id]) {
+      // Remove marker from the map
+      markers[id].remove();
+
+      // Explicitly remove marker's DOM element if still present
+      const markerElement = markers[id].getElement(); // Get marker's DOM element
+
+      if (markerElement && markerElement.parentNode) {
+        markerElement.parentNode.removeChild(markerElement); // Remove marker's div from DOM
+      }
+
+      delete markers[id];    // Delete the marker from the markers object
+    }
+  }
+
+  console.log("Geofence layers and markers removed.");
+
+  // Clear all the previous members from the member div
+  const membersDiv = document.getElementById("membersDiv");
+  membersDiv.innerHTML = ''; // Clear all the previous members
+}
+
 
 // Error handler function for centralized error logging
 function handleError(error, context) {
@@ -102,14 +172,19 @@ async function fetchFenceData() {
     );
 
     const rawResponse = await response.text();
-    console.log("Raw API response:", rawResponse);
+
+
 
     const data = JSON.parse(rawResponse);
+    places = data;
+    console.log(places);
+    console.log("Raw API response:", rawResponse);
+
     console.log("Fence data fetched:", data);
 
     if (data && data.document) {
       data.document.forEach((geofence) => {
-        addGeofence(geofence);
+        addGeofence(geofence, color);
       });
     } else {
       console.error("Geofence data structure is incorrect:", data);
@@ -122,7 +197,7 @@ async function fetchFenceData() {
 
 
 // Add geofence to the map
-function addGeofence(geofence) {
+function addGeofence(geofence, color) {
   const center = [geofence.longitude, geofence.latitude];
   const radiusInMeters = parseFloat(geofence.radius);
   const options = { steps: 64, units: "meters" };
@@ -149,6 +224,9 @@ function addGeofence(geofence) {
   });
   defaultMarker.setLngLat(center).addTo(map);
 
+  // Store the default marker in the markers object using the geofence's UUID as the key
+  markers[geofence.uuid] = defaultMarker;
+
   // Add an outer circle to represent the radius visually
   map.addLayer({
     id: geofence.uuid + "-circle",
@@ -162,18 +240,33 @@ function addGeofence(geofence) {
     },
     paint: {
       "circle-radius": 22,
-      "circle-color": "#FFFFFF",
+      // "circle-color": "#FFFFFF",
+      "circle-color": color,
       "circle-opacity": 1,
+      'circle-stroke-color': '#777',
+      'circle-stroke-width': 1
+
     },
   });
 }
 
+function addFenceData() {
+  console.log("loading fence data after style change");
+  if (places && places.document) {
+    places.document.forEach((geofence) => {
+      const color = isDarkMode ? "#FFFFFF" : "#FFFFFF"; // White for dark mode, darker for light mode
+      addGeofence(geofence, color);
+    });
+  } else {
+    console.error("Geofence data structure is incorrect:", places);
+  }
+}
 
 async function fetchmembersData() {
   console.log("Fetching members data...");
 
   // Retrieve the GroupId from localStorage
-  getGroupId();
+  //getGroupId();
   console.log("Using this groupId: ", groupId);
 
   // Check if groupId exists
@@ -239,16 +332,9 @@ function addMemberToMenu(memberData, bgColor) {
   } else {
     // If no avatar, show the initials inside a circle
     const initialsDiv = document.createElement("div");
+    initialsDiv.classList.add("init-cir");
     initialsDiv.textContent = getInitials(memberData.name); // Generate initials from the name
     initialsDiv.style.backgroundColor = bgColor; // Set background color dynamically
-    initialsDiv.style.height = "90%";
-    initialsDiv.style.width = "90%";
-    initialsDiv.style.borderRadius = "9999px";
-    initialsDiv.style.display = "flex";
-    initialsDiv.style.alignItems = "center";
-    initialsDiv.style.justifyContent = "center";
-    initialsDiv.style.fontSize = "1.5em";
-    initialsDiv.style.color = "#fff"; // Text color for initials
     avatarDiv.appendChild(initialsDiv); // Append initials to avatarDiv
   }
 
@@ -258,10 +344,61 @@ function addMemberToMenu(memberData, bgColor) {
 
   // Add member name and coordinates
   const infoDiv = document.createElement("div");
-  infoDiv.innerHTML = `
-                <div class="member-name">${memberData.name}</div>
-                <div class="gps-coordinates">Lat: ${memberData.location.latitude}, Long: ${memberData.location.longitude}</div>
-            `;
+  const card_content = `
+    <div class="member-name">${memberData.name}</div>
+    ${memberData.status.device.charging ? `
+      <svg 
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#000000"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="card-charging-icon charging"
+      >
+        <path d="M14 7h2a2 2 0 012 2v6a2 2 0 01-2 2h-3" />
+        <path d="M7 7H4a2 2 0 00-2 2v6a2 2 0 002 2h2" />
+        <polyline points="11 7 8 12 12 12 9 17" />
+        <line x1="22" x2="22" y1="11" y2="13" />
+      </svg>
+    ` : `
+      <svg 
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#000000"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="card-charging-icon not-charging"
+      >
+        <rect x="2" y="7" width="16" height="10" rx="2" ry="2" />
+        <line x1="22" x2="22" y1="11" y2="13" />
+        <line x1="6" x2="6" y1="10" y2="14" />
+        <line x1="10" x2="10" y1="10" y2="14" />
+      </svg>
+    `}
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+
+      stroke="#000000"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="card-wifi-icon ${memberData?.status?.device?.wifi ? 'true' : 'false'}"
+    >
+      <path d="M5 13a10 10 0 0114 0" />
+      <path d="M8.5 16.5a5 5 0 017 0" />
+      <path d="M2 8.82a15 15 0 0120 0" />
+      <line x1="12" y1="20" x2="12.01" y2="20" />
+    </svg>
+    <span class="card-member-speed">Speed:</span><span class="card-member-speed-value"> ${memberData.status.speed} MPH</span>
+    <!-- <span class="card-member-address">Addres:</span><span class="card-member-address-value">${memberData.location.address || 'N/A'}</span> -->
+    <!-- <div class="gps-coordinates">Lat: ${memberData.location.latitude}, Long: ${memberData.location.longitude}</div> -->
+   `;
+
+  infoDiv.innerHTML += card_content;
   memberBox.appendChild(infoDiv);
 
   // Append the member box to the members div
@@ -277,6 +414,7 @@ function addMemberToMenu(memberData, bgColor) {
       zoom: 12,
       essential: true,
     });
+    document.body.classList.remove("menu-open");
   });
 }
 
@@ -314,7 +452,7 @@ function addMemberMarker(memberData, bgColor) {
         newBadgeDiv.classList.add("badge");
 
         const badgeImg = document.createElement("img");
-        badgeImg.src = "https://raw.githubusercontent.com/they-call-me-E/Map_Project/main/assets/driving.png";
+        badgeImg.src = "https://raw.githubusercontent.com/they-call-me-E/Map_Project/main/assets/car.svg";
 
         const speedSpan = document.createElement("span");
         speedSpan.classList.add("badge-speed");
@@ -376,7 +514,8 @@ function addMemberMarker(memberData, bgColor) {
       badgeDiv.classList.add("badge");
 
       const badgeImg = document.createElement("img");
-      badgeImg.src = "https://raw.githubusercontent.com/they-call-me-E/Map_Project/main/assets/driving.png";
+      badgeImg.setAttribute('id', "car");
+      badgeImg.src = "https://raw.githubusercontent.com/they-call-me-E/Map_Project/main/assets/car.svg";
 
       const speedSpan = document.createElement("span");
       speedSpan.classList.add("badge-speed");
@@ -394,7 +533,7 @@ function addMemberMarker(memberData, bgColor) {
 
     const expandedCircleDiv = circleDiv.cloneNode(true);
     expandedDiv.appendChild(expandedCircleDiv);
-    console.log('Here');
+
     // Add content to the expanded marker
     const content = `
     <div class="content">
@@ -407,6 +546,7 @@ function addMemberMarker(memberData, bgColor) {
         width="24"
         height="24"
         viewBox="0 0 24 24"
+        fill="none"
         stroke="#000000"
         stroke-width="2"
         stroke-linecap="round"
@@ -483,7 +623,7 @@ function addMemberMarker(memberData, bgColor) {
     expandedDiv.innerHTML += content;
 
     expandedDiv.querySelector('.close-btn').style.display = "hidden"; // Show close button
-    console.log("or here");
+
     el.appendChild(expandedDiv); // Add expanded view to marker
 
     // Add the marker to the map
@@ -554,14 +694,17 @@ document
   .getElementById("members-btn")
   .addEventListener("click", function () {
     const membersDiv = document.getElementById("membersDiv");
+    const menu = document.getElementById('menu');
     if (membersDiv.style.maxHeight) {
       membersDiv.style.maxHeight = null;
+      menu.classList.remove("open");
       membersDiv.classList.remove("open", "open-scroll"); // Close the div and remove scroll
 
     } else {
       // membersDiv.style.maxHeight = membersDiv.scrollHeight + "px";
       membersDiv.style.maxHeight = "275px";
       membersDiv.classList.add("open");
+      menu.classList.add("open");
 
       // Wait for the transition to complete before enabling scrolling
       membersDiv.addEventListener(
@@ -605,9 +748,12 @@ function getInitials(name) {
 
 document.querySelector('.back-arrow').addEventListener('click', function () {
   // Add a class to hide the menu (e.g., sliding it out)
+  document.querySelector('.menu').classList.remove("open");
   document.querySelector('.profile-menu').classList.remove('profile-menu-open');
 });
+
 document.querySelector('#profile-button').addEventListener('click', function () {
+  document.querySelector('.menu').classList.add("open");
   document.querySelector('.profile-menu').classList.add('profile-menu-open');
 });
 
@@ -669,36 +815,47 @@ function highlightSelectedItem(selectedName) {
 
   dropdownItems.forEach(item => {
     const itemName = item.querySelector('span').textContent;
+    const selectBar = item.querySelector('.select-bar');
+
+
     if (itemName === selectedName) {
-      item.classList.add('selected-item');
+      item.classList.add('selected-item');  // Add selected-item to the dropdown-item
+      if (selectBar) {
+        selectBar.classList.add('selected-item');  // Add selected-item to the select-bar
+      }
     } else {
-      item.classList.remove('selected-item');
+      item.classList.remove('selected-item');  // Remove selected-item from dropdown-item
+      if (selectBar) {
+        selectBar.classList.remove('selected-item');  // Remove selected-item from the select-bar
+      }
     }
   });
 }
 
-
-// Select an item from the dropdown
 function selectItem(element) {
   const selectedName = element.querySelector("span").textContent;
   const selectedValue = element.getAttribute("data-value"); // UUID
 
   // Save the GroupUUID in localStorage for persistence across sessions
-  localStorage.setItem("GroupId", selectedValue);
+  localStorage.setItem("GroupId", selectedValue); // Ensure it's saved
 
-  // Update the button text with the selected name
+  // Immediately retrieve the updated GroupId and update groupId variable
+  groupId = localStorage.getItem('GroupId');
+  console.log("Updated GroupId in localStorage:", groupId);
+
+  // Clear previous members (optional, if needed)
+  //clearMemberMenu();
+
+  // Update the dropdown button text
   document.getElementById('dropdownButton').textContent = selectedName;
-
-  // Remove or comment these lines if those elements don't exist in the HTML
-  // document.getElementById("selectedName").textContent = selectedName;
-  // document.getElementById("selectedValue").textContent = selectedValue;
-
+  // Highlight the selected item and corresponding select-bar
+  highlightSelectedItem(selectedName);
   // Close the dropdown after selection
   toggleDropdown();
 
-  console.log("GroupId saved in localStorage:", selectedValue);
+  // Reload map data with the new GroupId
+  loadMapData();
 }
-
 
 
 // Edit item function
@@ -731,7 +888,6 @@ function deleteItem(itemName) {
 }
 
 // Add new item to the dropdown
-// Add new item to the dropdown
 function addNewItem() {
   const newItemName = document.getElementById("newItemName").value;
   const newItemUUID = generateUUID();  // Generate a new UUID for the item
@@ -763,8 +919,8 @@ function addNewItem() {
     };
 
     newItem.appendChild(newItemText);
-    newItem.appendChild(editButton);
-    newItem.appendChild(deleteButton);
+    //newItem.appendChild(editButton);
+    //newItem.appendChild(deleteButton);
 
     // Insert the new item before the footer
     dropdown.insertBefore(newItem, footer);
@@ -832,6 +988,8 @@ function populateDropdown(groups) {
     newItem.setAttribute("data-value", group.uuid); // Use the group UUID
     newItem.setAttribute("onclick", "selectItem(this)");  // Add click handler
 
+    const selectBar = document.createElement("div");
+    selectBar.classList.add("select-bar");
     const newItemText = document.createElement("span");
     newItemText.textContent = group.name; // Display the group name
 
@@ -848,10 +1006,10 @@ function populateDropdown(groups) {
       event.stopPropagation();
       deleteItem(group.name);
     };
-
+    newItem.appendChild(selectBar);
     newItem.appendChild(newItemText);
-    newItem.appendChild(editButton);
-    newItem.appendChild(deleteButton);
+    //newItem.appendChild(editButton);
+    //newItem.appendChild(deleteButton);
 
     // Append the new item to the dropdown
     dropdownItems.appendChild(newItem);
@@ -866,9 +1024,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Function to initialize the dropdown and select the corresponding group based on GroupId
 function initializeDropdown() {
-  // Retrieve GroupId from localStorage
-  getGroupId();
-
   // Check if a GroupId exists in localStorage
   if (groupId) {
     console.log("GroupId found in localStorage:", groupId);
@@ -888,9 +1043,13 @@ function initializeDropdown() {
 
         // Optionally, highlight the selected item in the dropdown list
         item.classList.add('selected-item');
+
+        document.querySelector('.select-bar').classList.add("selected-item");
         matchFound = true;
       } else {
         item.classList.remove('selected-item');
+        document.querySelector('.select-bar').classList.remove("selected-item");
+
       }
     });
 
@@ -910,12 +1069,33 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function getGroupId() {
-  const groupId = localStorage.getItem('GroupId');
+  //const groupId = localStorage.getItem('GroupId');
   if (!groupId) {
     console.error("GroupId not found in localStorage!");
   }
   return groupId;
 }
+document.getElementById("dark-mode-toggle").addEventListener("change", function () {
+  if (this.checked) {
+    // Checkbox is checked (dark mode on)
+    map.setStyle('mapbox://styles/mapbox/dark-v11');
+    document.body.classList.remove("lightmode");
+    isDarkMode = true;
+  } else {
+    // Checkbox is unchecked (dark mode off)
+    map.setStyle('mapbox://styles/mapbox/streets-v12');
+    document.body.classList.add("lightmode");
+    isDarkMode = false;
+  }
+});
+
+// Add source and layer whenever base style is loaded
+map.on('style.load', () => {
+  if (places !== null) {
+    addFenceData();
+  }
+});
+
 
 // setInterval(() => {
 //   fetchmembersData(); // Fetch and update members data every 30 seconds

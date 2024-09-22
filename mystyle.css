@@ -1,9 +1,8 @@
-
 /* Styling for the dropdown button */
 .dropbtn {
-    background-color: #262d3d;
+    background-color: var(--dropdown-background);
     /* Dark background color */
-    color: #fff;
+    color: var(--dropdown-text);
     /* White text color */
     padding: 10px;
     font-size: 16px;
@@ -29,7 +28,7 @@
     /* Downward arrow */
     font-size: 12px;
     margin-left: 10px;
-    color: #fff;
+    color: var(--dropdown-text);
     /* White arrow */
 }
 
@@ -45,6 +44,7 @@
     width: 220px;
 }
 
+
 /* Styling for the dropdown content */
 .dropdown-content {
     display: none;
@@ -56,18 +56,20 @@
     min-width: 100%;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
     /* Same shadow effect */
-    border-radius: 8px;
-    z-index: 1;
-    /* border-top: 2px solid #87CEFA; */
-    /* Highlight border at the top */
+    border-radius: 0 0 8px 8px;
+    z-index: 200;
+    opacity: 0;
+    /* Set initial height to 0 for sliding effect */
+    transition: opacity 0.2s ease;
 }
 
 /* Ensure dropdown content displays when the 'open' class is added */
 .dropdown.open .dropdown-content {
+    z-index: 1000;
+    opacity: 1;
     display: block;
 
 }
-
 
 /* Styling for the dropdown item */
 .dropdown-item {
@@ -82,6 +84,9 @@
     transition: background-color 0.3s;
     border-bottom: 1px solid #3a3a3a;
     /* Slight bottom border for each item */
+    position: relative;
+    background-color: var(--list-item-background);
+    color: var(--dropdown-text);
 }
 
 .dropdown-item span {
@@ -101,9 +106,9 @@
 
 /* Highlight the selected item */
 .selected-item {
-    background-color: #87CEFA;
+    background-color: var(--list-item-background);
     /* Light blue background to highlight */
-    color: #000;
+    color: var(--dropdown-text-selected);
     /* Change text color for selected item */
     font-weight: bold;
     /* Make the text bold */
@@ -111,7 +116,7 @@
 
 /* Hide the Edit and Delete buttons by default */
 .dropdown-item button {
-    display: none;
+    display: block;
 }
 
 /* Show the Edit and Delete buttons only when hovering over the dropdown item */
@@ -170,4 +175,18 @@
     /* Ensure it stays inline with the text */
     top: 0;
     /* Align it vertically with the text */
+}
+
+.select-bar {
+    position: absolute;
+    height: 100%;
+    width: 5px;
+    background-color: transparent;
+    left: 0;
+}
+
+.select-bar.selected-item {
+
+    background-color: var(--menu-button-color);
+
 }
